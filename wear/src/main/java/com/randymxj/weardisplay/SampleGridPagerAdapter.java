@@ -1,106 +1,148 @@
+/*
+ * Copyright (C) 2014 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.randymxj.weardisplay;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
-import android.os.Bundle;
 import android.support.wearable.view.CardFragment;
 import android.support.wearable.view.FragmentGridPagerAdapter;
 import android.support.wearable.view.ImageReference;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
-
-import java.util.ArrayList;
+import android.view.Gravity;
 
 /**
- * Created by Xiaojing on 9/19/2014.
+ * Constructs fragments as requested by the GridViewPager. For each row a
+ * different background is provided.
  */
 public class SampleGridPagerAdapter extends FragmentGridPagerAdapter {
 
     private final Context mContext;
-    private ArrayList<SimpleRow> mPages;
 
-    public SampleGridPagerAdapter(Context context, FragmentManager fm) {
+    public SampleGridPagerAdapter(Context ctx, FragmentManager fm) {
         super(fm);
-        mContext = context;
-        initPages();
+        mContext = ctx;
     }
 
-    private void initPages() {
-        mPages = new ArrayList<SimpleRow>();
+    static final int BG_DEFAULT = R.drawable.bg_cloud;
 
-        Log.d("@@@", "SampleGridPagerAdapter 1");
+    static final int[] BG_IMAGES = new int[] {
+            R.drawable.debug_background_1,
+            R.drawable.debug_background_2,
+            R.drawable.debug_background_3,
+            R.drawable.debug_background_4,
+            R.drawable.debug_background_5
+    };
 
-        SimpleRow row1 = new SimpleRow();
-        row1.addPages(new SimplePage("Card1-Index", "Supermarket Cards", 0, R.drawable.bg_cloud));
-        row1.addPages(new SimplePage("Card1-1", "", 0, R.drawable.bg_qrcode));
-        row1.addPages(new SimplePage("Card1-2", "", 0, R.drawable.bg_barcode));
+    /** A simple container for static data in each page */
+    private static class Page {
+        String titleRes;
+        String textRes;
+        int iconRes;
+        int bg;
+        int cardGravity = Gravity.BOTTOM;
+        boolean expansionEnabled = true;
+        float expansionFactor = 1.0f;
+        int expansionDirection = CardFragment.EXPAND_DOWN;
 
-        SimpleRow row2 = new SimpleRow();
-        row2.addPages(new SimplePage("Card2-Others", "Minor Cards", R.drawable.ic_launcher, R.drawable.bg_cloud));
-        row2.addPages(new SimplePage("Card2-1", "", R.drawable.ic_launcher, R.drawable.bg_cloud));
-        row2.addPages(new SimplePage("Card2-2", "", R.drawable.ic_launcher, R.drawable.bg_cloud));
+        /*
+        public Page(String titleRes, String textRes, boolean expansion) {
+            this(titleRes, textRes, 0);
+            this.expansionEnabled = expansion;
+        }
 
-        mPages.add(row1);
-        mPages.add(row2);
+        public Page(String titleRes, String textRes, boolean expansion, float expansionFactor) {
+            this(titleRes, textRes, 0);
+            this.expansionEnabled = expansion;
+            this.expansionFactor = expansionFactor;
+        }
+        */
 
-        Log.d("@@@", "SampleGridPagerAdapter 3");
+        public Page(String titleRes, String textRes, int iconRes, int bg) {
+            this.titleRes = titleRes;
+            this.textRes = textRes;
+            this.iconRes = iconRes;
+            this.bg = bg;
+        }
+
+        public Page(String titleRes, String textRes, int iconRes, int bg, int gravity) {
+            this.titleRes = titleRes;
+            this.textRes = textRes;
+            this.iconRes = iconRes;
+            this.bg = bg;
+            this.cardGravity = gravity;
+        }
     }
+
+    private final Page[][] PAGES = {
+            {
+                    new Page("Wear Display", "To display a QRcode, Barcode or any img you want", R.drawable.bugdroid, 0, Gravity.TOP),
+            },
+            {
+                    new Page("Member Cards", "", R.drawable.bugdroid, 0),
+                    new Page("Card 1 - QRCode", "", R.drawable.bugdroid, R.drawable.bg_qrcode),
+                    new Page("Card 2 - Barcode", "", R.drawable.bugdroid, R.drawable.bg_barcode),
+                    new Page("Card 3", "", 0, 0),
+                    new Page("Card 4", "", 0, 0),
+            },
+            {
+                    new Page("Page 2", "Other 0", 0, 0),
+                    new Page("Page 2", "Other 1", 0, 0),
+            },
+            {
+                    new Page("Page 3", "Other 0", 0, 0),
+                    new Page("Page 3", "Other 1", 0, 0),
+            },
+            {
+                    new Page("Page 4", "This is the last page, swipe right to exit", R.drawable.bugdroid, 0, Gravity.TOP),
+            },
+
+    };
 
     @Override
     public Fragment getFragment(int row, int col) {
-        SimplePage page = mPages.get(row).getPages(col);
-
-        Log.d("@@@", "getFragment: " + page.mTitle);
-
-        //SimpleCardFragment fragment =  SimpleCardFragment.newInstance(page.mTitle, page.mText, page.mIconId);
-
-        CardFragment fragment =  CardFragment.create(page.mTitle, page.mText, page.mIconId);
-
+        Page page = PAGES[row][col];
+        String title = page.titleRes;
+        String text = page.textRes;
+        CardFragment fragment = CardFragment.create(title, text, page.iconRes);
+        // Advanced settings
+        fragment.setCardGravity(page.cardGravity);
+        fragment.setExpansionEnabled(page.expansionEnabled);
+        fragment.setExpansionDirection(page.expansionDirection);
+        fragment.setExpansionFactor(page.expansionFactor);
         return fragment;
     }
 
     @Override
     public ImageReference getBackground(int row, int col) {
-        SimplePage page = mPages.get(row).getPages(col);
-        return ImageReference.forDrawable(page.mBackgroundId);
+        Page page = PAGES[row][col];
+
+        if( page.bg > 0 )
+            return ImageReference.forDrawable(page.bg);
+        else
+            return ImageReference.forDrawable(BG_DEFAULT);
     }
 
     @Override
     public int getRowCount() {
-        return mPages.size();
+        return PAGES.length;
     }
 
     @Override
-    public int getColumnCount(int row) {
-        return mPages.get(row).size();
-    }
-
-    public static class SimpleCardFragment extends CardFragment {
-
-        private static String mTitle = "";
-
-        @Override
-        public View onCreateContentView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-
-            TextView text = new TextView(this.getActivity());
-            text.setText(mTitle);
-            text.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Log.d("@@@", "Click: " + mTitle);
-                }
-            });
-            return text;
-        }
-
-        public static SimpleCardFragment newInstance( String title, String text, int iconId ) {
-            mTitle = title;
-
-            return new SimpleCardFragment();
-        }
+    public int getColumnCount(int rowNum) {
+        return PAGES[rowNum].length;
     }
 }

@@ -14,8 +14,11 @@
      limitations under the License.
 -->
 
-<resources>
-    <string name="app_name">Wear Activity</string>
-    <string name="hello_square">Square</string>
-    <string name="hello_round">Round</string>
-</resources>
+<android.support.wearable.view.WearableListView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/times_list_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:scrollbars="none"
+    android:dividerHeight="0dp" />
