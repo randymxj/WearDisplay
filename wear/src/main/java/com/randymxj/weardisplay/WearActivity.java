@@ -19,11 +19,35 @@ import java.util.ArrayList;
  */
 public class WearActivity extends Activity implements WearableListView.ClickListener {
 
+    public static final int TYPE_IMAGE = 0;
+    public static final int TYPE_QRCODE = 1;
+    public static final int TYPE_BARCODE = 2;
+    public static final int TYPE_COLOR = 3;
+    public static final int TYPE_BLINK = 4;
+    public static final int TYPE_SETTING = 9;
+
     private WearableListView mListView;
     private MyListAdapter mAdapter;
 
     private float mDefaultCircleRadius;
     private float mSelectedCircleRadius;
+
+    // Class for the list nodes
+    public class ListNode {
+        public int icon_id = 0;
+        public String title = "";
+        public int rid = 0;
+        public int type = TYPE_IMAGE;
+
+        public ListNode( int i, String s, int r, int t ) {
+            this.icon_id = i;
+            this.title = s;
+            this.rid = r;
+            this.type = t;
+        }
+    }
+
+    public ArrayList<ListNode> listItems = new ArrayList<ListNode>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,30 +67,35 @@ public class WearActivity extends Activity implements WearableListView.ClickList
                 mListView.setClickListener(WearActivity.this);
             }
         });
-    }
 
-    private static ArrayList<Integer> listItems;
-    static {
-        listItems = new ArrayList<Integer>();
-        listItems.add(R.drawable.ic_card);
-        listItems.add(R.drawable.ic_img);
-        listItems.add(R.drawable.ic_qrcode);
-        listItems.add(R.drawable.ic_setting);
-        listItems.add(R.drawable.ic_launcher);
+        // Construct the item list
+        listItems.add(new ListNode(R.drawable.ic_card, "CVS ExtraCare", R.drawable.img_barcode_cvs, TYPE_BARCODE));
+        listItems.add(new ListNode(R.drawable.ic_card, "Stop&Shop", R.drawable.img_barcode_stopshop, TYPE_BARCODE));
+        listItems.add(new ListNode(R.drawable.ic_launcher, "Green Color", R.color.green, TYPE_COLOR));
+        listItems.add(new ListNode(R.drawable.ic_launcher, "Blue Blink", R.color.blue, TYPE_BLINK));
+        listItems.add(new ListNode(R.drawable.ic_img, "Image", R.drawable.bg_cloud, TYPE_IMAGE));
+        listItems.add(new ListNode(R.drawable.ic_qrcode, "My Profile", R.drawable.img_qrcode, TYPE_QRCODE));
+        listItems.add(new ListNode(R.drawable.ic_setting, "Setting", R.drawable.img_qrcode, TYPE_SETTING));
     }
 
     @Override
     public void onClick(WearableListView.ViewHolder viewHolder) {
-        Toast.makeText(this, String.format("You selected item #%s", viewHolder.getPosition()), Toast.LENGTH_SHORT).show();
+
+        ListNode node = listItems.get(viewHolder.getPosition());
+
+        //Toast.makeText(this, String.format(node.title), Toast.LENGTH_SHORT).show();
 
         // Start an intent
         Intent intent = new Intent(this, ShowImageActivity.class);
+        intent.putExtra("TYPE", node.type);
+        intent.putExtra("TITLE", node.title);
+        intent.putExtra("RID", node.rid);
         startActivity(intent);
     }
 
     @Override
     public void onTopEmptyRegionClick() {
-        Toast.makeText(this, "You tapped Top empty area", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "You tapped Top empty area", Toast.LENGTH_SHORT).show();
     }
 
     public class MyListAdapter extends WearableListView.Adapter {
@@ -80,12 +109,13 @@ public class WearActivity extends Activity implements WearableListView.ClickList
         public void onBindViewHolder(WearableListView.ViewHolder viewHolder, int i) {
             MyItemView itemView = (MyItemView) viewHolder.itemView;
 
-            TextView txtView = (TextView) itemView.findViewById(R.id.text);
-            txtView.setText(String.format("Item %d", i));
+            ListNode node = listItems.get(i);
 
-            Integer resourceId = listItems.get(i);
+            TextView txtView = (TextView) itemView.findViewById(R.id.text);
+            txtView.setText(node.title);
+
             CircledImageView imgView = (CircledImageView) itemView.findViewById(R.id.image);
-            imgView.setImageResource(resourceId);
+            imgView.setImageResource(node.icon_id);
         }
 
         @Override
@@ -128,9 +158,9 @@ public class WearActivity extends Activity implements WearableListView.ClickList
 
         @Override
         public void setScalingAnimatorValue(float value) {
-            mScale = value;
-            imgView.setCircleRadius(mScale);
-            imgView.setCircleRadiusPressed(mScale);
+            //mScale = value;
+            //imgView.setCircleRadius(mScale);
+            //imgView.setCircleRadiusPressed(mScale);
         }
 
         @Override
