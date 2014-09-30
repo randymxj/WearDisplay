@@ -24,6 +24,7 @@ public class ShowImageActivity extends Activity {
         Intent intent = getIntent();
         int type = intent.getIntExtra("TYPE", 0);
         String title = intent.getStringExtra("TITLE");
+        String text = intent.getStringExtra("TEXT");
         int rid = intent.getIntExtra("RID", 0);
 
         if( type == WearActivity.TYPE_BARCODE )
@@ -46,6 +47,14 @@ public class ShowImageActivity extends Activity {
             ImageView iv = (ImageView) findViewById(R.id.image_imageView);
             iv.setImageResource(rid);
         }
+        else if( type == WearActivity.TYPE_TEXT )
+        {
+            setContentView(R.layout.box_text);
+            TextView tv_title = (TextView) findViewById(R.id.text_textView_title);
+            tv_title.setText(title);
+            TextView tv_text = (TextView) findViewById(R.id.text_textView_text);
+            tv_text.setText(text);
+        }
         else if( type == WearActivity.TYPE_COLOR )
         {
             setContentView(R.layout.box_color);
@@ -61,8 +70,8 @@ public class ShowImageActivity extends Activity {
             final AnimationDrawable drawable = new AnimationDrawable();
             final Handler handler = new Handler();
 
-            drawable.addFrame(new ColorDrawable(getResources().getColor(rid)), 200);
-            drawable.addFrame(new ColorDrawable(Color.BLACK), 200);
+            drawable.addFrame(new ColorDrawable(getResources().getColor(rid)), 100);
+            drawable.addFrame(new ColorDrawable(Color.BLACK), 100);
             drawable.setOneShot(false);
 
             layout.setBackground(drawable);

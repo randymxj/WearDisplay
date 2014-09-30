@@ -17,7 +17,7 @@
         android:layout_gravity="center_vertical">
 
         <TextView
-            android:id="@+id/barcode_textView"
+            android:id="@+id/text_textView_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
@@ -25,11 +25,13 @@
             android:textColor="#000000"
             android:layout_gravity="center" />
 
-        <ImageView
-            android:id="@+id/barcode_imageView"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/text_textView_text"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
+            android:layout_marginTop="25dp"
+            android:textSize="25dp"
+            android:textColor="#000000"
             android:layout_gravity="center" />
 
     </LinearLayout>
