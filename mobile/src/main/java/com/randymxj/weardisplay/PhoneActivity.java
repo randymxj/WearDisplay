@@ -7,7 +7,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.EnumMap;
 import java.util.Map;
@@ -18,27 +20,66 @@ import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 
+import org.w3c.dom.Text;
 
-public class PhoneActivity extends Activity {
+
+public class PhoneActivity extends Activity implements View.OnClickListener {
+
+    public static final int TYPE_IMAGE = 0;
+    public static final int TYPE_QRCODE = 1;
+    public static final int TYPE_BARCODE = 2;
+    public static final int TYPE_TEXT = 3;
+    public static final int TYPE_COLOR = 4;
+    public static final int TYPE_BLINK = 5;
+    public static final int TYPE_SETTING = 9;
+
+    Config config;
+
+    // Class for the list nodes
+    public static class ListNode {
+        public int icon_id = 0;
+        public String title = "";
+        public String text = "";
+        public String value = "";
+        public int rid = 0;
+        public int type = TYPE_BARCODE;
+
+        public ListNode( int i, String s1, String s2, String s3, int r, int t ) {
+            this.icon_id = i;
+            this.title = s1;
+            this.text = s2;
+            this.value = s3;
+            this.rid = r;
+            this.type = t;
+        }
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_phone);
 
-        // Read data from ZXing
-        try
+        config = new Config(this);
+        config.readTracker();
+
+        LinearLayout itemlist_layout = (LinearLayout) findViewById(R.id.itemlist_LinearLayout);
+
+        for( int i = 0; i < config.items.size(); i++ )
         {
-            Intent intent = new Intent("com.google.zxing.client.android.SCAN");
-            //intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
-            startActivityForResult(intent, 0);
+            ListNode node = config.items.get(i);
+
+            LinearLayout layout = (LinearLayout)getLayoutInflater().inflate(R.layout.item_layout, null);
+            TextView tv = (TextView) layout.findViewById(R.id.item_title_textView);
+            tv.setText(node.value);
+
+            itemlist_layout.addView(layout);
         }
-        catch (Exception e)
-        {
-            Uri marketUri = Uri.parse("market://details?id=com.google.zxing.client.android");
-            Intent marketIntent = new Intent(Intent.ACTION_VIEW,marketUri);
-            startActivity(marketIntent);
-        }
+    }
+
+    @Override
+    public void onClick(View view) {
+
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -47,52 +88,22 @@ public class PhoneActivity extends Activity {
         {
             if (resultCode == RESULT_OK)
             {
-                String contents = intent.getStringExtra("SCAN_RESULT");
-                String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
-                // Handle successful scan
+                int item_type = intent.getIntExtra("item_type", 0);
 
-                BarcodeFormat code_format;
-                if( format.compareToIgnoreCase("CODE_128") == 0 )
+                if( item_type == TYPE_BARCODE )
                 {
-                    code_format = BarcodeFormat.CODE_128;
-                }
-                else if( format.compareToIgnoreCase("EAN_13") == 0 )
-                {
-                    code_format = BarcodeFormat.EAN_13;
-                }
-                else if( format.compareToIgnoreCase("UPC_A") == 0 )
-                {
-                    code_format = BarcodeFormat.UPC_A;
-                }
-                else
-                {
-                    code_format = BarcodeFormat.CODE_128;
-                }
+                    String value = intent.getStringExtra("value");
+                    String title = intent.getStringExtra("title");
+                    String description = intent.getStringExtra("description");
 
-                String barcode_data = contents;
-
-                // Barcode image
-                ImageView iv = (ImageView) findViewById(R.id.barcode_imageView);
-                // Barcode text
-                TextView tv = (TextView) findViewById(R.id.barcode_textView);
-                tv.setText(barcode_data);
-
-                try
-                {
-
-                    Bitmap bitmap = encodeAsBitmap(barcode_data, code_format, 600, 300);
-                    iv.setImageBitmap(bitmap);
-
-                }
-                catch (WriterException e)
-                {
-                    e.printStackTrace();
+                    ListNode node = new ListNode(0, title, description, value, 0, item_type);
+                    config.items.add(node);
+                    config.writeItems();
                 }
 
             }
             else if (resultCode == RESULT_CANCELED)
             {
-                // Handle cancel
             }
         }
     }
@@ -110,70 +121,18 @@ public class PhoneActivity extends Activity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
+        if( id == R.id.action_add )
+        {
+            // EnterBarcode Activity
+            Intent intent = new Intent(PhoneActivity.this, EnterBarcodeActivity.class);
+            startActivityForResult(intent, 0);
+        }
+        else if( id == R.id.action_settings )
+        {
             return true;
         }
+
         return super.onOptionsItemSelected(item);
-    }
-
-    /*
-    ZXing barcode/qrcode generator
-     */
-
-    private static final int WHITE = 0xFFFFFFFF;
-    private static final int BLACK = 0xFF000000;
-
-    Bitmap encodeAsBitmap(String contents, BarcodeFormat format, int img_width, int img_height) throws WriterException {
-
-        String contentsToEncode = contents;
-        if (contentsToEncode == null) {
-            return null;
-        }
-
-        Map<EncodeHintType, Object> hints = null;
-        String encoding = guessAppropriateEncoding(contentsToEncode);
-
-        if (encoding != null) {
-            hints = new EnumMap<EncodeHintType, Object>(EncodeHintType.class);
-            hints.put(EncodeHintType.CHARACTER_SET, encoding);
-        }
-
-        MultiFormatWriter writer = new MultiFormatWriter();
-        BitMatrix result;
-
-        try {
-            result = writer.encode(contentsToEncode, format, img_width, img_height, hints);
-        } catch (IllegalArgumentException iae) {
-            // Unsupported format
-            return null;
-        }
-
-        int width = result.getWidth();
-        int height = result.getHeight();
-        int[] pixels = new int[width * height];
-
-        for (int y = 0; y < height; y++) {
-            int offset = y * width;
-            for (int x = 0; x < width; x++) {
-                pixels[offset + x] = result.get(x, y) ? BLACK : WHITE;
-            }
-        }
-
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
-
-        return bitmap;
-    }
-
-    private static String guessAppropriateEncoding(CharSequence contents) {
-
-        // Very crude at the moment
-        for (int i = 0; i < contents.length(); i++) {
-            if (contents.charAt(i) > 0xFF) {
-                return "UTF-8";
-            }
-        }
-        return null;
     }
 
 }

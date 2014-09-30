@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="code_type_array">
+        <item>CODE_128</item>
+        <item>CODE_39</item>
+        <item>CODE_93</item>
+        <item>EAN13</item>
+        <item>EAN8</item>
+        <item>UPC_A</item>
+        <item>UPC_B</item>
+    </string-array>
+</resources>

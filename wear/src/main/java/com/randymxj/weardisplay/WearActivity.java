@@ -38,13 +38,15 @@ public class WearActivity extends Activity implements WearableListView.ClickList
         public int icon_id = 0;
         public String title = "";
         public String text = "";
+        public String value = "";
         public int rid = 0;
-        public int type = TYPE_IMAGE;
+        public int type = TYPE_BARCODE;
 
-        public ListNode( int i, String s1, String s2, int r, int t ) {
+        public ListNode( int i, String s1, String s2, String s3, int r, int t ) {
             this.icon_id = i;
             this.title = s1;
             this.text = s2;
+            this.value = s3;
             this.rid = r;
             this.type = t;
         }
@@ -73,14 +75,14 @@ public class WearActivity extends Activity implements WearableListView.ClickList
         });
 
         // Construct the item list
-        listItems.add(new ListNode(R.drawable.ic_cvs, "CVS ExtraCare", "", R.drawable.img_barcode_cvs, TYPE_BARCODE));
-        listItems.add(new ListNode(R.drawable.ic_card, "Stop&Shop", "", R.drawable.img_barcode_stopshop, TYPE_BARCODE));
-        listItems.add(new ListNode(R.drawable.ic_avis, "Avis Preferred", "4EC55M", 0, TYPE_TEXT));
-        listItems.add(new ListNode(R.drawable.ic_umbrella, "Green Color", "", R.color.green, TYPE_COLOR));
-        listItems.add(new ListNode(R.drawable.ic_colorwheel, "Blue Blink", "", R.color.blue, TYPE_BLINK));
-        listItems.add(new ListNode(R.drawable.ic_img, "Image", "", R.drawable.bg_cloud, TYPE_IMAGE));
-        listItems.add(new ListNode(R.drawable.ic_qrcode, "My Profile", "", R.drawable.img_qrcode, TYPE_QRCODE));
-        listItems.add(new ListNode(R.drawable.ic_setting, "Setting", "", R.drawable.img_qrcode, TYPE_SETTING));
+        listItems.add(new ListNode(R.drawable.ic_cvs, "CVS ExtraCare", "", "", R.drawable.img_barcode_cvs, TYPE_BARCODE));
+        listItems.add(new ListNode(R.drawable.ic_card, "Stop&Shop", "", "", R.drawable.img_barcode_stopshop, TYPE_BARCODE));
+        listItems.add(new ListNode(R.drawable.ic_avis, "Avis Preferred", "4EC55M", "", 0, TYPE_TEXT));
+        listItems.add(new ListNode(R.drawable.ic_umbrella, "Green Color", "", "", R.color.green, TYPE_COLOR));
+        listItems.add(new ListNode(R.drawable.ic_colorwheel, "Blue Blink", "", "", R.color.blue, TYPE_BLINK));
+        listItems.add(new ListNode(R.drawable.ic_img, "Image", "", "", R.drawable.bg_cloud, TYPE_IMAGE));
+        listItems.add(new ListNode(R.drawable.ic_qrcode, "My Profile", "", "", R.drawable.img_qrcode, TYPE_QRCODE));
+        listItems.add(new ListNode(R.drawable.ic_setting, "Setting", "", "", R.drawable.img_qrcode, TYPE_SETTING));
     }
 
     @Override
