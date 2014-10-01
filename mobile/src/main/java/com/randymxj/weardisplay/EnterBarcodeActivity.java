@@ -2,32 +2,27 @@ package com.randymxj.weardisplay;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
-import android.widget.TextView;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.EnumMap;
-import java.util.Map;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
+
+import java.io.FileOutputStream;
+import java.util.EnumMap;
+import java.util.Map;
 
 
 public class EnterBarcodeActivity extends Activity implements View.OnClickListener {
@@ -121,6 +116,7 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
             intent.putExtra("value", str_value);
             intent.putExtra("title", str_title);
             intent.putExtra("description", str_description);
+            intent.putExtra("format", code_type);
 
             setResult(RESULT_OK, intent);
             finish();
@@ -178,10 +174,12 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
 
                 String barcode_data = contents;
 
-
                 value_editText.setText(barcode_data);
 
                 type_spinner.setSelection(type_spinner_adapter.getPosition(format));
+
+                Log.e("@@@ Format", format);
+                Log.e("@@@ Index", String.valueOf(type_spinner_adapter.getPosition(format)));
 
                 try
                 {

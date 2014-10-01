@@ -46,6 +46,7 @@ public class Config {
                 item.put("title", node.title);
                 item.put("text", node.text);
                 item.put("value", node.value);
+                item.put("format", node.format);
                 item.put("type", node.type);
 
                 item_array.put(item);
@@ -113,9 +114,10 @@ public class Config {
                 String title = item.getString("title");
                 String text = item.getString("text");
                 String value = item.getString("value");
+                String format = item.getString("format");
                 int type = item.getInt("type");
 
-                PhoneActivity.ListNode node = new PhoneActivity.ListNode(0, title, text, value, 0, type);
+                PhoneActivity.ListNode node = new PhoneActivity.ListNode(0, title, text, value, format, 0, type);
                 items.add(node);
             }
 

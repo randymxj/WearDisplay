@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -41,14 +42,16 @@ public class PhoneActivity extends Activity implements View.OnClickListener {
         public String title = "";
         public String text = "";
         public String value = "";
+        public String format = "CODE_128";
         public int rid = 0;
         public int type = TYPE_BARCODE;
 
-        public ListNode( int i, String s1, String s2, String s3, int r, int t ) {
+        public ListNode( int i, String s1, String s2, String s3, String s4, int r, int t ) {
             this.icon_id = i;
             this.title = s1;
             this.text = s2;
             this.value = s3;
+            this.format = s4;
             this.rid = r;
             this.type = t;
         }
@@ -63,8 +66,18 @@ public class PhoneActivity extends Activity implements View.OnClickListener {
         config = new Config(this);
         config.readTracker();
 
+        LayoutInflater layoutInflater = LayoutInflater.from(this);
+
         LinearLayout itemlist_layout = (LinearLayout) findViewById(R.id.itemlist_LinearLayout);
 
+        LinearLayout layout = (LinearLayout) layoutInflater.inflate(R.layout.item_layout, null);
+
+        TextView tv = (TextView) layout.findViewById(R.id.item_title_textView);
+        tv.setText("1234567890");
+
+        itemlist_layout.addView(layout);
+
+        /*
         for( int i = 0; i < config.items.size(); i++ )
         {
             ListNode node = config.items.get(i);
@@ -75,6 +88,7 @@ public class PhoneActivity extends Activity implements View.OnClickListener {
 
             itemlist_layout.addView(layout);
         }
+        */
     }
 
     @Override
@@ -95,8 +109,9 @@ public class PhoneActivity extends Activity implements View.OnClickListener {
                     String value = intent.getStringExtra("value");
                     String title = intent.getStringExtra("title");
                     String description = intent.getStringExtra("description");
+                    String format = intent.getStringExtra("format");
 
-                    ListNode node = new ListNode(0, title, description, value, 0, item_type);
+                    ListNode node = new ListNode(0, title, description, value, format, 0, item_type);
                     config.items.add(node);
                     config.writeItems();
                 }

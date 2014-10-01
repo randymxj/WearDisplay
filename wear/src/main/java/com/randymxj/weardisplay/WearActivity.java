@@ -11,7 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 import java.util.ArrayList;
 
 /**
@@ -34,19 +33,21 @@ public class WearActivity extends Activity implements WearableListView.ClickList
     private float mSelectedCircleRadius;
 
     // Class for the list nodes
-    public class ListNode {
+    public static class ListNode {
         public int icon_id = 0;
         public String title = "";
         public String text = "";
         public String value = "";
+        public String format = "CODE_128";
         public int rid = 0;
         public int type = TYPE_BARCODE;
 
-        public ListNode( int i, String s1, String s2, String s3, int r, int t ) {
+        public ListNode( int i, String s1, String s2, String s3, String s4, int r, int t ) {
             this.icon_id = i;
             this.title = s1;
             this.text = s2;
             this.value = s3;
+            this.format = s4;
             this.rid = r;
             this.type = t;
         }
@@ -75,14 +76,15 @@ public class WearActivity extends Activity implements WearableListView.ClickList
         });
 
         // Construct the item list
-        listItems.add(new ListNode(R.drawable.ic_cvs, "CVS ExtraCare", "", "", R.drawable.img_barcode_cvs, TYPE_BARCODE));
-        listItems.add(new ListNode(R.drawable.ic_card, "Stop&Shop", "", "", R.drawable.img_barcode_stopshop, TYPE_BARCODE));
-        listItems.add(new ListNode(R.drawable.ic_avis, "Avis Preferred", "4EC55M", "", 0, TYPE_TEXT));
-        listItems.add(new ListNode(R.drawable.ic_umbrella, "Green Color", "", "", R.color.green, TYPE_COLOR));
-        listItems.add(new ListNode(R.drawable.ic_colorwheel, "Blue Blink", "", "", R.color.blue, TYPE_BLINK));
-        listItems.add(new ListNode(R.drawable.ic_img, "Image", "", "", R.drawable.bg_cloud, TYPE_IMAGE));
-        listItems.add(new ListNode(R.drawable.ic_qrcode, "My Profile", "", "", R.drawable.img_qrcode, TYPE_QRCODE));
-        listItems.add(new ListNode(R.drawable.ic_setting, "Setting", "", "", R.drawable.img_qrcode, TYPE_SETTING));
+        listItems.add(new ListNode(R.drawable.ic_cvs, "CVS ExtraCare", "", "4879038296855", "EAN_13", 0, TYPE_BARCODE));
+        listItems.add(new ListNode(R.drawable.ic_card, "Stop&Shop", "", "2212567294022", "EAN_13", 0, TYPE_BARCODE));
+        listItems.add(new ListNode(R.drawable.ic_card, "HMart", "", "403007927385", "UPC_A", 0, TYPE_BARCODE));
+        listItems.add(new ListNode(R.drawable.ic_avis, "Avis Preferred", "", "4EC55M", "", 0, TYPE_TEXT));
+        listItems.add(new ListNode(R.drawable.ic_umbrella, "Green Color", "", "", "", R.color.green, TYPE_COLOR));
+        listItems.add(new ListNode(R.drawable.ic_colorwheel, "Blue Blink", "", "", "", R.color.blue, TYPE_BLINK));
+        listItems.add(new ListNode(R.drawable.ic_img, "Image", "", "", "", R.drawable.bg_cloud, TYPE_IMAGE));
+        listItems.add(new ListNode(R.drawable.ic_qrcode, "My Profile", "", "", "", R.drawable.img_qrcode, TYPE_QRCODE));
+        listItems.add(new ListNode(R.drawable.ic_setting, "Setting", "", "", "", R.drawable.img_qrcode, TYPE_SETTING));
     }
 
     @Override
@@ -94,10 +96,12 @@ public class WearActivity extends Activity implements WearableListView.ClickList
 
         // Start an intent
         Intent intent = new Intent(this, ShowImageActivity.class);
-        intent.putExtra("TYPE", node.type);
-        intent.putExtra("TITLE", node.title);
-        intent.putExtra("TEXT", node.text);
-        intent.putExtra("RID", node.rid);
+        intent.putExtra("title", node.title);
+        intent.putExtra("text", node.text);
+        intent.putExtra("value", node.value);
+        intent.putExtra("format", node.format);
+        intent.putExtra("rid", node.rid);
+        intent.putExtra("type", node.type);
         startActivity(intent);
     }
 

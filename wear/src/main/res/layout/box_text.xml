@@ -17,7 +17,7 @@
         android:layout_gravity="center_vertical">
 
         <TextView
-            android:id="@+id/text_textView_title"
+            android:id="@+id/text_title_textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
@@ -26,7 +26,7 @@
             android:layout_gravity="center" />
 
         <TextView
-            android:id="@+id/text_textView_text"
+            android:id="@+id/text_value_textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="25dp"

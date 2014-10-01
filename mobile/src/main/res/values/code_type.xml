@@ -4,8 +4,8 @@
         <item>CODE_128</item>
         <item>CODE_39</item>
         <item>CODE_93</item>
-        <item>EAN13</item>
-        <item>EAN8</item>
+        <item>EAN_13</item>
+        <item>EAN_8</item>
         <item>UPC_A</item>
         <item>UPC_B</item>
     </string-array>
