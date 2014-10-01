@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,8 +25,14 @@ import com.google.zxing.common.BitMatrix;
 import org.w3c.dom.Text;
 
 
-public class PhoneActivity extends Activity implements View.OnClickListener {
+public class PhoneActivity extends Activity implements View.OnClickListener, View.OnLongClickListener {
 
+    // CMD
+    public static final int NOTHING = 0;
+    public static final int NEW_ITEM = 1;
+    public static final int REMOVE_ITEM = 2;
+
+    // Type
     public static final int TYPE_IMAGE = 0;
     public static final int TYPE_QRCODE = 1;
     public static final int TYPE_BARCODE = 2;
@@ -46,6 +53,8 @@ public class PhoneActivity extends Activity implements View.OnClickListener {
         public int rid = 0;
         public int type = TYPE_BARCODE;
 
+        public View nodeView;
+
         public ListNode( int i, String s1, String s2, String s3, String s4, int r, int t ) {
             this.icon_id = i;
             this.title = s1;
@@ -54,6 +63,11 @@ public class PhoneActivity extends Activity implements View.OnClickListener {
             this.format = s4;
             this.rid = r;
             this.type = t;
+        }
+
+        public void setView(View v)
+        {
+            nodeView = v;
         }
 
     }
@@ -66,34 +80,75 @@ public class PhoneActivity extends Activity implements View.OnClickListener {
         config = new Config(this);
         config.readTracker();
 
+        if( config.items.size() > 0 )
+            updateItemList();
+    }
+
+    public void updateItemList()
+    {
+        // LayoutInflater
         LayoutInflater layoutInflater = LayoutInflater.from(this);
 
+        // Parent Layout
         LinearLayout itemlist_layout = (LinearLayout) findViewById(R.id.itemlist_LinearLayout);
+        itemlist_layout.removeAllViewsInLayout();
 
-        LinearLayout layout = (LinearLayout) layoutInflater.inflate(R.layout.item_layout, null);
-
-        TextView tv = (TextView) layout.findViewById(R.id.item_title_textView);
-        tv.setText("1234567890");
-
-        itemlist_layout.addView(layout);
-
-        /*
+        // Insertion
         for( int i = 0; i < config.items.size(); i++ )
         {
             ListNode node = config.items.get(i);
 
             LinearLayout layout = (LinearLayout)getLayoutInflater().inflate(R.layout.item_layout, null);
-            TextView tv = (TextView) layout.findViewById(R.id.item_title_textView);
-            tv.setText(node.value);
+            LinearLayout module = (LinearLayout) layout.findViewById(R.id.module_item_layout);
+            TextView tv_title = (TextView) module.findViewById(R.id.item_title_textView);
+            tv_title.setText(node.title);
+            TextView tv_text = (TextView) module.findViewById(R.id.item_text_textView);
+            tv_text.setText(node.text);
+
+            module.setOnClickListener(this);
+
+            node.setView(module);
 
             itemlist_layout.addView(layout);
         }
-        */
     }
 
     @Override
-    public void onClick(View view) {
+    public void onClick(View v) {
 
+        Log.e("@@@ OnClick", String.valueOf(v.getId()));
+
+        if( v.getId() == R.id.module_item_layout )
+        {
+            // Search for data
+            for( int i = 0; i < config.items.size(); i++ )
+            {
+                ListNode node = config.items.get(i);
+
+                if( node.nodeView == v )
+                {
+                    // ViewBarcode Activity
+                    Intent intent = new Intent(PhoneActivity.this, ViewBarcodeActivity.class);
+
+                    intent.putExtra("title", node.title);
+                    intent.putExtra("value", node.value);
+                    intent.putExtra("text", node.text);
+                    intent.putExtra("format", node.format);
+                    intent.putExtra("type", node.type);
+
+                    startActivityForResult(intent, 0);
+                    break;
+                }
+            }
+        }
+
+    }
+
+    @Override
+    public boolean onLongClick(View v) {
+        Log.e("@@@ Long", String.valueOf(v.getId()));
+
+        return false;
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -102,18 +157,45 @@ public class PhoneActivity extends Activity implements View.OnClickListener {
         {
             if (resultCode == RESULT_OK)
             {
-                int item_type = intent.getIntExtra("item_type", 0);
+                int cmd = intent.getIntExtra("cmd", 0);
 
-                if( item_type == TYPE_BARCODE )
+                if( cmd == NEW_ITEM )
+                {
+                    int type = intent.getIntExtra("type", 0);
+
+                    if (type == TYPE_BARCODE)
+                    {
+                        String value = intent.getStringExtra("value");
+                        String title = intent.getStringExtra("title");
+                        String text = intent.getStringExtra("text");
+                        String format = intent.getStringExtra("format");
+
+                        ListNode node = new ListNode(0, title, text, value, format, 0, type);
+                        config.items.add(node);
+                        config.writeItems();
+
+                        updateItemList();
+                    }
+                }
+                else if( cmd == REMOVE_ITEM )
                 {
                     String value = intent.getStringExtra("value");
                     String title = intent.getStringExtra("title");
-                    String description = intent.getStringExtra("description");
-                    String format = intent.getStringExtra("format");
 
-                    ListNode node = new ListNode(0, title, description, value, format, 0, item_type);
-                    config.items.add(node);
-                    config.writeItems();
+                    // Search for data
+                    for( int i = 0; i < config.items.size(); i++ )
+                    {
+                        ListNode node = config.items.get(i);
+
+                        if( ( node.title.compareToIgnoreCase(title) == 0 ) && ( node.value.compareToIgnoreCase(value) == 0 ) )
+                        {
+                            // Remove node and layout
+                            ((LinearLayout)node.nodeView.getParent()).removeView(node.nodeView);
+                            config.items.remove(node);
+                            config.writeItems();
+                            break;
+                        }
+                    }
                 }
 
             }
@@ -148,6 +230,104 @@ public class PhoneActivity extends Activity implements View.OnClickListener {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /*
+    ZXing barcode/qrcode generator
+     */
+
+    private static final int WHITE = 0xFFFFFFFF;
+    private static final int BLACK = 0xFF000000;
+
+    public static Bitmap encodeAsBitmap(String contents, String str_format, int img_width, int img_height) throws WriterException {
+
+        BarcodeFormat format;
+        if( str_format.compareToIgnoreCase("CODE_128") == 0 )
+        {
+            format = BarcodeFormat.CODE_128;
+        }
+        else if( str_format.compareToIgnoreCase("CODE_39") == 0 )
+        {
+            format = BarcodeFormat.CODE_39;
+        }
+        else if( str_format.compareToIgnoreCase("CODE_93") == 0 )
+        {
+            format = BarcodeFormat.CODE_93;
+        }
+        else if( str_format.compareToIgnoreCase("EAN_13") == 0 )
+        {
+            format = BarcodeFormat.EAN_13;
+        }
+        else if( str_format.compareToIgnoreCase("EAN_8") == 0 )
+        {
+            format = BarcodeFormat.EAN_8;
+        }
+        else if( str_format.compareToIgnoreCase("UPC_A") == 0 )
+        {
+            format = BarcodeFormat.UPC_A;
+        }
+        else if( str_format.compareToIgnoreCase("UPC_E") == 0 )
+        {
+            format = BarcodeFormat.UPC_E;
+        }
+        else if( str_format.compareToIgnoreCase("QR_CODE") == 0 )
+        {
+            format = BarcodeFormat.QR_CODE;
+        }
+        else
+        {
+            format = BarcodeFormat.CODE_128;
+        }
+
+        String contentsToEncode = contents;
+        if (contentsToEncode == null) {
+            return null;
+        }
+
+        Map<EncodeHintType, Object> hints = null;
+        String encoding = guessAppropriateEncoding(contentsToEncode);
+
+        if (encoding != null) {
+            hints = new EnumMap<EncodeHintType, Object>(EncodeHintType.class);
+            hints.put(EncodeHintType.CHARACTER_SET, encoding);
+        }
+
+        MultiFormatWriter writer = new MultiFormatWriter();
+        BitMatrix result;
+
+        try {
+            result = writer.encode(contentsToEncode, format, img_width, img_height, hints);
+        } catch (IllegalArgumentException iae) {
+            // Unsupported format
+            return null;
+        }
+
+        int width = result.getWidth();
+        int height = result.getHeight();
+        int[] pixels = new int[width * height];
+
+        for (int y = 0; y < height; y++) {
+            int offset = y * width;
+            for (int x = 0; x < width; x++) {
+                pixels[offset + x] = result.get(x, y) ? BLACK : WHITE;
+            }
+        }
+
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
+
+        return bitmap;
+    }
+
+    private static String guessAppropriateEncoding(CharSequence contents) {
+
+        // Very crude at the moment
+        for (int i = 0; i < contents.length(); i++) {
+            if (contents.charAt(i) > 0xFF) {
+                return "UTF-8";
+            }
+        }
+        return null;
     }
 
 }

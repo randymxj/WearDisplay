@@ -1,7 +1,9 @@
 package com.randymxj.weardisplay;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -91,9 +93,40 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
             int item_type = PhoneActivity.TYPE_BARCODE;
             String str_value = value_editText.getText().toString();
             String str_title = title_editText.getText().toString();
-            String str_description = description_editText.getText().toString();
+            String str_text = description_editText.getText().toString();
             String code_type = type_spinner.getSelectedItem().toString();
             Bitmap code = code_bitmap;
+
+            if( str_title.length() == 0 )
+            {
+                new AlertDialog.Builder(this)
+                        .setTitle("Incomplete Information")
+                        .setMessage("Please enter a title for this item")
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // Nothing
+                            }
+                        })
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .show();
+
+                return;
+            }
+            else if( str_value.length() == 0 )
+            {
+                new AlertDialog.Builder(this)
+                        .setTitle("Incomplete Information")
+                        .setMessage("Please enter a card number or scan the card by camera for this item")
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // Nothing
+                            }
+                        })
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .show();
+
+                return;
+            }
 
             // Save image data to program storage
 
@@ -112,10 +145,11 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
             }
 
             Intent intent = new Intent();
-            intent.putExtra("item_type", item_type);
+            intent.putExtra("cmd", PhoneActivity.NEW_ITEM);
+            intent.putExtra("type", item_type);
             intent.putExtra("value", str_value);
             intent.putExtra("title", str_title);
-            intent.putExtra("description", str_description);
+            intent.putExtra("text", str_text);
             intent.putExtra("format", code_type);
 
             setResult(RESULT_OK, intent);
@@ -134,44 +168,6 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
                 String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
                 // Handle successful scan
 
-                BarcodeFormat code_format;
-                if( format.compareToIgnoreCase("CODE_128") == 0 )
-                {
-                    code_format = BarcodeFormat.CODE_128;
-                }
-                else if( format.compareToIgnoreCase("CODE_39") == 0 )
-                {
-                    code_format = BarcodeFormat.CODE_39;
-                }
-                else if( format.compareToIgnoreCase("CODE_93") == 0 )
-                {
-                    code_format = BarcodeFormat.CODE_93;
-                }
-                else if( format.compareToIgnoreCase("EAN_13") == 0 )
-                {
-                    code_format = BarcodeFormat.EAN_13;
-                }
-                else if( format.compareToIgnoreCase("EAN_8") == 0 )
-                {
-                    code_format = BarcodeFormat.EAN_8;
-                }
-                else if( format.compareToIgnoreCase("UPC_A") == 0 )
-                {
-                    code_format = BarcodeFormat.UPC_A;
-                }
-                else if( format.compareToIgnoreCase("UPC_E") == 0 )
-                {
-                    code_format = BarcodeFormat.UPC_E;
-                }
-                else if( format.compareToIgnoreCase("QR_CODE") == 0 )
-                {
-                    code_format = BarcodeFormat.QR_CODE;
-                }
-                else
-                {
-                    code_format = BarcodeFormat.CODE_128;
-                }
-
                 String barcode_data = contents;
 
                 value_editText.setText(barcode_data);
@@ -183,8 +179,7 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
 
                 try
                 {
-
-                    code_bitmap = encodeAsBitmap(barcode_data, code_format, 600, 300);
+                    code_bitmap = PhoneActivity.encodeAsBitmap(barcode_data, format, 600, 300);
                     barcode_imageView.setImageBitmap(code_bitmap);
 
                 }
@@ -221,65 +216,5 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
         return super.onOptionsItemSelected(item);
     }
     */
-
-    /*
-    ZXing barcode/qrcode generator
-     */
-
-    private static final int WHITE = 0xFFFFFFFF;
-    private static final int BLACK = 0xFF000000;
-
-    Bitmap encodeAsBitmap(String contents, BarcodeFormat format, int img_width, int img_height) throws WriterException {
-
-        String contentsToEncode = contents;
-        if (contentsToEncode == null) {
-            return null;
-        }
-
-        Map<EncodeHintType, Object> hints = null;
-        String encoding = guessAppropriateEncoding(contentsToEncode);
-
-        if (encoding != null) {
-            hints = new EnumMap<EncodeHintType, Object>(EncodeHintType.class);
-            hints.put(EncodeHintType.CHARACTER_SET, encoding);
-        }
-
-        MultiFormatWriter writer = new MultiFormatWriter();
-        BitMatrix result;
-
-        try {
-            result = writer.encode(contentsToEncode, format, img_width, img_height, hints);
-        } catch (IllegalArgumentException iae) {
-            // Unsupported format
-            return null;
-        }
-
-        int width = result.getWidth();
-        int height = result.getHeight();
-        int[] pixels = new int[width * height];
-
-        for (int y = 0; y < height; y++) {
-            int offset = y * width;
-            for (int x = 0; x < width; x++) {
-                pixels[offset + x] = result.get(x, y) ? BLACK : WHITE;
-            }
-        }
-
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
-
-        return bitmap;
-    }
-
-    private static String guessAppropriateEncoding(CharSequence contents) {
-
-        // Very crude at the moment
-        for (int i = 0; i < contents.length(); i++) {
-            if (contents.charAt(i) > 0xFF) {
-                return "UTF-8";
-            }
-        }
-        return null;
-    }
 
 }

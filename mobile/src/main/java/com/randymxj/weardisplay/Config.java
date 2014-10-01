@@ -77,7 +77,7 @@ public class Config {
             e.printStackTrace();
         }
 
-        Log.e("@@@ WRITE", root.toString());
+        //Log.e("@@@ WRITE", root.toString());
 
     }
 
@@ -121,7 +121,7 @@ public class Config {
                 items.add(node);
             }
 
-            Log.e("@@@ READ", root.toString());
+            //Log.e("@@@ READ", root.toString());
 
             fis.close();
         }
