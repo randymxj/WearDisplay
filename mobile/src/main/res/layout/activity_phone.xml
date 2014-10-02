@@ -45,12 +45,6 @@
 
             </LinearLayout>
 
-            <include layout="@layout/item_layout" />
-
-            <include layout="@layout/item_layout" />
-
-            <include layout="@layout/item_layout" />
-
         </LinearLayout>
 
     </ScrollView>

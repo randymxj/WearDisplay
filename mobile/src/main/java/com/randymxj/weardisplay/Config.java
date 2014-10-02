@@ -133,5 +133,44 @@ public class Config {
 
     }
 
+    public String readStringJSON()
+    {
+        items.clear();
+        String filename = "items.json";
+        String result = "";
+
+        try
+        {
+            FileInputStream fis = main.openFileInput( filename );
+
+            if( fis.available() == 0 )
+            {
+                return result;
+            }
+
+            StringBuffer buffer = new StringBuffer();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
+            String receiveString = "";
+
+            while ((receiveString = reader.readLine()) != null)
+            {
+                buffer.append(receiveString + "\n" );
+            }
+
+            JSONObject root = new JSONObject(buffer.toString());
+
+            result = root.toString();
+
+            fis.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return result;
+
+    }
 
 }

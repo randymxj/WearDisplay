@@ -1,12 +1,16 @@
 package com.randymxj.weardisplay;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.view.CircledImageView;
 import android.support.wearable.view.WatchViewStub;
 import android.support.wearable.view.WearableListView;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -60,6 +64,11 @@ public class WearActivity extends Activity implements WearableListView.ClickList
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_listview);
+
+        // Listener
+        IntentFilter messageFilter = new IntentFilter(Intent.ACTION_SEND);
+        MessageReceiver messageReceiver = new MessageReceiver();
+        LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, messageFilter);
 
         mDefaultCircleRadius = getResources().getDimension(R.dimen.default_settings_circle_radius);
         mSelectedCircleRadius = getResources().getDimension(R.dimen.selected_settings_circle_radius);
@@ -133,6 +142,17 @@ public class WearActivity extends Activity implements WearableListView.ClickList
         @Override
         public int getItemCount() {
             return listItems.size();
+        }
+    }
+
+    public class MessageReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+            String message = intent.getStringExtra("message");
+            // Display message in UI
+            Log.e("@@@ REC", "Message received on Main Activity: " + message);
+            //mTextView.setText(message);
         }
     }
 

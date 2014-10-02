@@ -1,6 +1,7 @@
 package com.randymxj.weardisplay;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -13,9 +14,20 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import java.util.EnumMap;
-import java.util.Map;
 
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.Wearable;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.MultiFormatWriter;
@@ -25,7 +37,7 @@ import com.google.zxing.common.BitMatrix;
 import org.w3c.dom.Text;
 
 
-public class PhoneActivity extends Activity implements View.OnClickListener, View.OnLongClickListener {
+public class PhoneActivity extends Activity implements View.OnClickListener, View.OnLongClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
 
     // CMD
     public static final int NOTHING = 0;
@@ -41,7 +53,13 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
     public static final int TYPE_BLINK = 5;
     public static final int TYPE_SETTING = 9;
 
+    // Instance
     Config config;
+    GoogleApiClient googleClient;
+
+    // Variables
+    //String nodeId;
+    //String MESSAGE;
 
     // Class for the list nodes
     public static class ListNode {
@@ -82,6 +100,15 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
 
         if( config.items.size() > 0 )
             updateItemList();
+
+        //retrieveDeviceNode();
+
+        // Build a new GoogleApiClient
+        googleClient = new GoogleApiClient.Builder(this)
+                .addApi(Wearable.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
     }
 
     public void updateItemList()
@@ -115,8 +142,6 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
 
     @Override
     public void onClick(View v) {
-
-        Log.e("@@@ OnClick", String.valueOf(v.getId()));
 
         if( v.getId() == R.id.module_item_layout )
         {
@@ -226,10 +251,120 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
         }
         else if( id == R.id.action_settings )
         {
-            return true;
+            /*
+            if( nodeId.length() > 0 )
+            {
+                MESSAGE = "MESSAGE";
+                Log.e("@@@ SEND MSG", MESSAGE);
+                sendToast();
+            }*/
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    // Google API
+    /*
+    private GoogleApiClient getGoogleApiClient(Context context) {
+        return new GoogleApiClient.Builder(context)
+                .addApi(Wearable.API)
+                .build();
+    }
+
+    private void retrieveDeviceNode() {
+        final GoogleApiClient client = getGoogleApiClient(this);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                client.blockingConnect(400, TimeUnit.MILLISECONDS);
+                NodeApi.GetConnectedNodesResult result =
+                        Wearable.NodeApi.getConnectedNodes(client).await();
+                List<Node> nodes = result.getNodes();
+                if (nodes.size() > 0) {
+                    nodeId = nodes.get(0).getId();
+                    Log.e("@@@ INIT", nodeId);
+                }
+                client.disconnect();
+            }
+        }).start();
+    }
+
+    private void sendToast() {
+        final GoogleApiClient client = getGoogleApiClient(this);
+        if (nodeId != null) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    client.blockingConnect(400, TimeUnit.MILLISECONDS);
+                    Wearable.MessageApi.sendMessage(client, nodeId, MESSAGE, null);
+                    client.disconnect();
+                    Log.e("@@@ MSG SENT", MESSAGE);
+                }
+            }).start();
+        }
+    }
+    */
+
+    /*
+    Android Wear Message Api
+     */
+    // Connect to the data layer when the Activity starts
+    @Override
+    protected void onStart() {
+        super.onStart();
+        googleClient.connect();
+    }
+
+    // Send a message when the data layer connection is successful.
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        String message = "Hello wearable message Via the data layer";
+
+        message = config.readStringJSON();
+
+        //Requires a new thread to avoid blocking the UI
+        new SendToDataLayerThread("/message_path", message).start();
+    }
+
+    // Disconnect from the data layer when the Activity stops
+    @Override
+    protected void onStop() {
+        if (null != googleClient && googleClient.isConnected()) {
+            googleClient.disconnect();
+        }
+        super.onStop();
+    }
+
+    // Placeholders for required connection callbacks
+    @Override
+    public void onConnectionSuspended(int cause) { }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) { }
+
+    class SendToDataLayerThread extends Thread {
+        String path;
+        String message;
+
+        // Constructor to send a message to the data layer
+        SendToDataLayerThread(String p, String msg) {
+            path = p;
+            message = msg;
+        }
+
+        public void run() {
+            NodeApi.GetConnectedNodesResult nodes = Wearable.NodeApi.getConnectedNodes(googleClient).await();
+            for (Node node : nodes.getNodes()) {
+                MessageApi.SendMessageResult result = Wearable.MessageApi.sendMessage(googleClient, node.getId(), path, message.getBytes()).await();
+                if (result.getStatus().isSuccess()) {
+                    Log.e("@@@", "Message: {" + message + "} sent to: " + node.getDisplayName());
+                }
+                else {
+                    // Log an error
+                    Log.e("@@@", "ERROR: failed to send Message");
+                }
+            }
+        }
     }
 
     /*
