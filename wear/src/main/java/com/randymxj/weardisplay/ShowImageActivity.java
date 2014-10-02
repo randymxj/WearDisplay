@@ -44,6 +44,8 @@ public class ShowImageActivity extends Activity {
             setContentView(R.layout.box_barcode);
             TextView tv_title = (TextView) findViewById(R.id.barcode_title_textView);
             tv_title.setText(title);
+            TextView tv_text = (TextView) findViewById(R.id.barcode_text_textView);
+            tv_text.setText(text);
             TextView tv_value = (TextView) findViewById(R.id.barcode_value_textView);
             tv_value.setText(value);
 
@@ -90,7 +92,7 @@ public class ShowImageActivity extends Activity {
             try
             {
 
-                Bitmap code_bitmap = encodeAsBitmap(value, code_format, 226, 100);
+                Bitmap code_bitmap = encodeAsBitmap(value, code_format, 250, 100);
                 iv.setImageBitmap(code_bitmap);
 
             }

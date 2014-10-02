@@ -14,6 +14,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 
 import com.google.zxing.BarcodeFormat;
@@ -23,6 +24,7 @@ import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -32,9 +34,12 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
     private Button capturecode_button, savecode_button;
     private Spinner type_spinner;
     private ArrayAdapter<CharSequence> type_spinner_adapter;
-    private ImageView barcode_imageView;
+    private ImageView logo_imageView, barcode_imageView;
     private EditText value_editText, title_editText, description_editText;
     private Bitmap code_bitmap;
+
+    // Variable
+    private int selectedProviderIndex = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +56,9 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
         type_spinner_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         type_spinner.setAdapter(type_spinner_adapter);
 
+        // Logo image
+        logo_imageView = (ImageView) findViewById(R.id.logo_imageView);
+
         // Barcode image
         barcode_imageView = (ImageView) findViewById(R.id.barcode_imageView);
 
@@ -66,6 +74,43 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
         // Save barcode button
         savecode_button = (Button) findViewById(R.id.savecode_button);
         savecode_button.setOnClickListener(this);
+
+        // Build Member Card Provider List
+        String list[] = new String[PhoneActivity.providers.size()];
+        for( int i = 0; i < PhoneActivity.providers.size(); i++ )
+        {
+            list[i] = PhoneActivity.providers.get(i).title;
+        }
+
+        // Pre Selection Dialog
+        new AlertDialog.Builder(this)
+                .setTitle("Pick A Member Card")
+                .setItems(list, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // The 'which' argument contains the index position
+                        // of the selected item
+
+                        // Customize Card
+                        if (which == 0)
+                        {
+                            ((LinearLayout) logo_imageView.getParent()).removeView(logo_imageView);
+                            return;
+                        }
+
+                        selectedProviderIndex = which;
+
+                        PhoneActivity.MemberCardProvider node = PhoneActivity.providers.get(which);
+                        Log.e("@@@", node.title);
+
+                        title_editText.setText(node.title);
+                        description_editText.setText(node.text);
+                        type_spinner.setSelection(type_spinner_adapter.getPosition(node.format));
+
+                        if (node.icon_rid > 0)
+                            logo_imageView.setImageResource(node.icon_rid);
+                    }
+                })
+                .show();
     }
 
     @Override
@@ -95,7 +140,6 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
             String str_title = title_editText.getText().toString();
             String str_text = description_editText.getText().toString();
             String code_type = type_spinner.getSelectedItem().toString();
-            Bitmap code = code_bitmap;
 
             if( str_title.length() == 0 )
             {
@@ -128,24 +172,9 @@ public class EnterBarcodeActivity extends Activity implements View.OnClickListen
                 return;
             }
 
-            // Save image data to program storage
-
-            String filename = str_value + "_" + code_type;
-            FileOutputStream outputStream;
-
-            try
-            {
-                outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
-                code.compress(Bitmap.CompressFormat.PNG, 90, outputStream);
-                outputStream.close();
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-
             Intent intent = new Intent();
             intent.putExtra("cmd", PhoneActivity.NEW_ITEM);
+            intent.putExtra("icon_index", selectedProviderIndex);
             intent.putExtra("type", item_type);
             intent.putExtra("value", str_value);
             intent.putExtra("title", str_title);

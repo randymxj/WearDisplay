@@ -18,6 +18,13 @@
         android:background="#FFFFFF"
         android:orientation="vertical" >
 
+        <ImageView
+            android:id="@+id/view_logo_imageView"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_gravity="center"
+            android:contentDescription="" />
+
         <TextView
             android:id="@+id/view_barcode_title_textView"
             android:layout_width="match_parent"

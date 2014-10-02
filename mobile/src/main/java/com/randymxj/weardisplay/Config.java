@@ -1,7 +1,6 @@
 package com.randymxj.weardisplay;
 
 import android.content.Context;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,6 +42,7 @@ public class Config {
 
             try
             {
+                item.put("icon_index", node.icon_index);
                 item.put("title", node.title);
                 item.put("text", node.text);
                 item.put("value", node.value);
@@ -81,7 +81,7 @@ public class Config {
 
     }
 
-    public void readTracker()
+    public void readItems()
     {
         items.clear();
         String filename = "items.json";
@@ -111,13 +111,14 @@ public class Config {
             {
                 JSONObject item = item_array.getJSONObject(i);
 
+                int icon_index = item.getInt("icon_index");
                 String title = item.getString("title");
                 String text = item.getString("text");
                 String value = item.getString("value");
                 String format = item.getString("format");
                 int type = item.getInt("type");
 
-                PhoneActivity.ListNode node = new PhoneActivity.ListNode(0, title, text, value, format, 0, type);
+                PhoneActivity.ListNode node = new PhoneActivity.ListNode(icon_index, title, text, value, format, 0, type);
                 items.add(node);
             }
 
@@ -135,7 +136,6 @@ public class Config {
 
     public String readStringJSON()
     {
-        items.clear();
         String filename = "items.json";
         String result = "";
 

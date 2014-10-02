@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.zxing.WriterException;
@@ -20,6 +21,7 @@ public class ViewBarcodeActivity extends Activity {
 
     private String title, text, value, format;
     private int type;
+    private int icon_index = 0;
     private Bitmap code_bitmap;
 
     @Override
@@ -30,6 +32,7 @@ public class ViewBarcodeActivity extends Activity {
         // Get intent information
         Intent intent = getIntent();
 
+        icon_index = intent.getIntExtra("icon_index", 0);
         title = intent.getStringExtra("title");
         text = intent.getStringExtra("text");
         value = intent.getStringExtra("value");
@@ -47,6 +50,12 @@ public class ViewBarcodeActivity extends Activity {
 
         TextView tv_format = (TextView) findViewById(R.id.view_barcode_format_textView);
         tv_format.setText(format);
+
+        ImageView iv_logo = (ImageView) findViewById(R.id.view_logo_imageView);
+        if( icon_index > 0 )
+            iv_logo.setImageResource(PhoneActivity.providers.get(icon_index).icon_rid);
+        else
+            ((LinearLayout) iv_logo.getParent()).removeView(iv_logo);
 
         ImageView iv_barcode = (ImageView) findViewById(R.id.view_barcode_imageView);
         try

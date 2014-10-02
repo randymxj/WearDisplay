@@ -14,7 +14,9 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -58,12 +60,37 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
     GoogleApiClient googleClient;
 
     // Variables
-    //String nodeId;
-    //String MESSAGE;
+
+    // Pre load member card providers
+    public  static class MemberCardProvider {
+        public String title, text, format;
+        public int icon_rid = 0;
+
+        public MemberCardProvider(int i, String s1, String s2, String s3)
+        {
+            icon_rid = i;
+            title = s1;
+            text = s2;
+            format = s3;
+        }
+    }
+
+    public static ArrayList<MemberCardProvider> providers = new ArrayList<MemberCardProvider>()
+    {
+        {
+            // Build Member Card Provider List
+            add(new MemberCardProvider(0, "Others", "", ""));
+            add(new MemberCardProvider(R.drawable.ic_cvs, "CVS", "Extra Care", "EAN_13"));
+            add(new MemberCardProvider(0, "Shaws", "Reward Card", "UPC_A"));
+            add(new MemberCardProvider(0, "Stop&Shop", "Reward Card", "EAN_13"));
+            add(new MemberCardProvider(0, "IKEA", "Family", "CODE_128"));
+            add(new MemberCardProvider(0, "DICK'S", "Score Card Rewards", "UPC_A"));
+        }
+    };
 
     // Class for the list nodes
     public static class ListNode {
-        public int icon_id = 0;
+        public int icon_index = 0;
         public String title = "";
         public String text = "";
         public String value = "";
@@ -74,7 +101,7 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
         public View nodeView;
 
         public ListNode( int i, String s1, String s2, String s3, String s4, int r, int t ) {
-            this.icon_id = i;
+            this.icon_index = i;
             this.title = s1;
             this.text = s2;
             this.value = s3;
@@ -96,12 +123,10 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
         setContentView(R.layout.activity_phone);
 
         config = new Config(this);
-        config.readTracker();
+        config.readItems();
 
         if( config.items.size() > 0 )
             updateItemList();
-
-        //retrieveDeviceNode();
 
         // Build a new GoogleApiClient
         googleClient = new GoogleApiClient.Builder(this)
@@ -109,6 +134,11 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
+    }
+
+    public void makeToast(String str)
+    {
+        Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
     }
 
     public void updateItemList()
@@ -155,6 +185,7 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
                     // ViewBarcode Activity
                     Intent intent = new Intent(PhoneActivity.this, ViewBarcodeActivity.class);
 
+                    intent.putExtra("icon_index", node.icon_index);
                     intent.putExtra("title", node.title);
                     intent.putExtra("value", node.value);
                     intent.putExtra("text", node.text);
@@ -190,12 +221,13 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
 
                     if (type == TYPE_BARCODE)
                     {
+                        int icon_index = intent.getIntExtra("icon_index", 0);
                         String value = intent.getStringExtra("value");
                         String title = intent.getStringExtra("title");
                         String text = intent.getStringExtra("text");
                         String format = intent.getStringExtra("format");
 
-                        ListNode node = new ListNode(0, title, text, value, format, 0, type);
+                        ListNode node = new ListNode(icon_index, title, text, value, format, 0, type);
                         config.items.add(node);
                         config.writeItems();
 
@@ -249,98 +281,57 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
             Intent intent = new Intent(PhoneActivity.this, EnterBarcodeActivity.class);
             startActivityForResult(intent, 0);
         }
+        else if( id == R.id.action_sync )
+        {
+            makeToast("Pushing Items to Wear Device");
+            googleClient.connect();
+        }
         else if( id == R.id.action_settings )
         {
-            /*
-            if( nodeId.length() > 0 )
-            {
-                MESSAGE = "MESSAGE";
-                Log.e("@@@ SEND MSG", MESSAGE);
-                sendToast();
-            }*/
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    // Google API
-    /*
-    private GoogleApiClient getGoogleApiClient(Context context) {
-        return new GoogleApiClient.Builder(context)
-                .addApi(Wearable.API)
-                .build();
-    }
-
-    private void retrieveDeviceNode() {
-        final GoogleApiClient client = getGoogleApiClient(this);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                client.blockingConnect(400, TimeUnit.MILLISECONDS);
-                NodeApi.GetConnectedNodesResult result =
-                        Wearable.NodeApi.getConnectedNodes(client).await();
-                List<Node> nodes = result.getNodes();
-                if (nodes.size() > 0) {
-                    nodeId = nodes.get(0).getId();
-                    Log.e("@@@ INIT", nodeId);
-                }
-                client.disconnect();
-            }
-        }).start();
-    }
-
-    private void sendToast() {
-        final GoogleApiClient client = getGoogleApiClient(this);
-        if (nodeId != null) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    client.blockingConnect(400, TimeUnit.MILLISECONDS);
-                    Wearable.MessageApi.sendMessage(client, nodeId, MESSAGE, null);
-                    client.disconnect();
-                    Log.e("@@@ MSG SENT", MESSAGE);
-                }
-            }).start();
-        }
-    }
-    */
-
     /*
     Android Wear Message Api
      */
+
     // Connect to the data layer when the Activity starts
     @Override
     protected void onStart() {
         super.onStart();
-        googleClient.connect();
-    }
-
-    // Send a message when the data layer connection is successful.
-    @Override
-    public void onConnected(Bundle connectionHint) {
-        String message = "Hello wearable message Via the data layer";
-
-        message = config.readStringJSON();
-
-        //Requires a new thread to avoid blocking the UI
-        new SendToDataLayerThread("/message_path", message).start();
+        //googleClient.connect();
     }
 
     // Disconnect from the data layer when the Activity stops
     @Override
     protected void onStop() {
+        /*
         if (null != googleClient && googleClient.isConnected()) {
             googleClient.disconnect();
         }
+        */
         super.onStop();
     }
 
     // Placeholders for required connection callbacks
     @Override
+    public void onConnected(Bundle connectionHint) {
+
+        String message = config.readStringJSON();
+
+        //Requires a new thread to avoid blocking the UI
+        new SendToDataLayerThread("/message_path", message).start();
+    }
+
+    @Override
     public void onConnectionSuspended(int cause) { }
 
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) { }
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        makeToast("Google API Connection Failed");
+    }
 
     class SendToDataLayerThread extends Thread {
         String path;
@@ -361,7 +352,11 @@ public class PhoneActivity extends Activity implements View.OnClickListener, Vie
                 }
                 else {
                     // Log an error
-                    Log.e("@@@", "ERROR: failed to send Message");
+                    Log.e("@@@", "ERROR: Failed to push items to Wear Device");
+                }
+
+                if (null != googleClient && googleClient.isConnected()) {
+                    googleClient.disconnect();
                 }
             }
         }

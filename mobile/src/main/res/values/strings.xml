@@ -5,6 +5,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_add">Add</string>
     <string name="action_remove">Remove</string>
+    <string name="action_sync">Sync</string>
     <string name="action_settings">Settings</string>
 
 </resources>

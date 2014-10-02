@@ -15,7 +15,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Xiaojing on 9/28/2014.
@@ -30,15 +33,18 @@ public class WearActivity extends Activity implements WearableListView.ClickList
     public static final int TYPE_BLINK = 5;
     public static final int TYPE_SETTING = 9;
 
+    // View
     private WearableListView mListView;
     private MyListAdapter mAdapter;
 
+    // Variable
     private float mDefaultCircleRadius;
     private float mSelectedCircleRadius;
+    private Config config;
 
     // Class for the list nodes
     public static class ListNode {
-        public int icon_id = 0;
+        public int icon_index = 0;
         public String title = "";
         public String text = "";
         public String value = "";
@@ -47,7 +53,7 @@ public class WearActivity extends Activity implements WearableListView.ClickList
         public int type = TYPE_BARCODE;
 
         public ListNode( int i, String s1, String s2, String s3, String s4, int r, int t ) {
-            this.icon_id = i;
+            this.icon_index = i;
             this.title = s1;
             this.text = s2;
             this.value = s3;
@@ -58,12 +64,43 @@ public class WearActivity extends Activity implements WearableListView.ClickList
 
     }
 
+    // Pre load member card providers
+    public  static class MemberCardProvider {
+        public String title, text, format;
+        public int icon_rid = 0;
+
+        public MemberCardProvider(int i, String s1, String s2, String s3)
+        {
+            icon_rid = i;
+            title = s1;
+            text = s2;
+            format = s3;
+        }
+    }
+
+    public static ArrayList<MemberCardProvider> providers = new ArrayList<MemberCardProvider>()
+    {
+        {
+            // Build Member Card Provider List
+            add(new MemberCardProvider(0, "Others", "", ""));
+            add(new MemberCardProvider(R.drawable.ic_cvs, "CVS", "Extra Care", "EAN_13"));
+            add(new MemberCardProvider(0, "Shaws", "Reward Card", "UPC_A"));
+            add(new MemberCardProvider(0, "Stop&Shop", "Reward Card", "EAN_13"));
+            add(new MemberCardProvider(0, "IKEA", "Family", "CODE_128"));
+            add(new MemberCardProvider(0, "DICK'S", "Score Card Rewards", "UPC_A"));
+        }
+    };
+
     public ArrayList<ListNode> listItems = new ArrayList<ListNode>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_listview);
+
+        // Config
+        config = new Config(this);
+        config.readItems();
 
         // Listener
         IntentFilter messageFilter = new IntentFilter(Intent.ACTION_SEND);
@@ -85,15 +122,21 @@ public class WearActivity extends Activity implements WearableListView.ClickList
         });
 
         // Construct the item list
-        listItems.add(new ListNode(R.drawable.ic_cvs, "CVS ExtraCare", "", "4879038296855", "EAN_13", 0, TYPE_BARCODE));
-        listItems.add(new ListNode(R.drawable.ic_card, "Stop&Shop", "", "2212567294022", "EAN_13", 0, TYPE_BARCODE));
-        listItems.add(new ListNode(R.drawable.ic_card, "HMart", "", "403007927385", "UPC_A", 0, TYPE_BARCODE));
-        listItems.add(new ListNode(R.drawable.ic_avis, "Avis Preferred", "", "4EC55M", "", 0, TYPE_TEXT));
-        listItems.add(new ListNode(R.drawable.ic_umbrella, "Green Color", "", "", "", R.color.green, TYPE_COLOR));
-        listItems.add(new ListNode(R.drawable.ic_colorwheel, "Blue Blink", "", "", "", R.color.blue, TYPE_BLINK));
-        listItems.add(new ListNode(R.drawable.ic_img, "Image", "", "", "", R.drawable.bg_cloud, TYPE_IMAGE));
-        listItems.add(new ListNode(R.drawable.ic_qrcode, "My Profile", "", "", "", R.drawable.img_qrcode, TYPE_QRCODE));
-        listItems.add(new ListNode(R.drawable.ic_setting, "Setting", "", "", "", R.drawable.img_qrcode, TYPE_SETTING));
+        for( int i = 0; i < config.items.size(); i++ )
+        {
+            ListNode node = config.items.get(i);
+            listItems.add(node);
+        }
+
+        //listItems.add(new ListNode(R.drawable.ic_cvs, "CVS ExtraCare", "", "4879038296855", "EAN_13", 0, TYPE_BARCODE));
+        //listItems.add(new ListNode(R.drawable.ic_card, "Stop&Shop", "", "2212567294022", "EAN_13", 0, TYPE_BARCODE));
+        //listItems.add(new ListNode(R.drawable.ic_card, "HMart", "", "403007927385", "UPC_A", 0, TYPE_BARCODE));
+        //listItems.add(new ListNode(R.drawable.ic_avis, "Avis Preferred", "", "4EC55M", "", 0, TYPE_TEXT));
+        //listItems.add(new ListNode(R.drawable.ic_umbrella, "Green Color", "", "", "", R.color.green, TYPE_COLOR));
+        //listItems.add(new ListNode(R.drawable.ic_colorwheel, "Blue Blink", "", "", "", R.color.blue, TYPE_BLINK));
+        //listItems.add(new ListNode(R.drawable.ic_img, "Image", "", "", "", R.drawable.bg_cloud, TYPE_IMAGE));
+        //listItems.add(new ListNode(R.drawable.ic_qrcode, "My Profile", "", "", "", R.drawable.img_qrcode, TYPE_QRCODE));
+        //listItems.add(new ListNode(R.drawable.ic_setting, "Setting", "", "", "", R.drawable.img_qrcode, TYPE_SETTING));
     }
 
     @Override
@@ -119,6 +162,11 @@ public class WearActivity extends Activity implements WearableListView.ClickList
         //Toast.makeText(this, "You tapped Top empty area", Toast.LENGTH_SHORT).show();
     }
 
+    public void makeToast(String str)
+    {
+        Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
+    }
+
     public class MyListAdapter extends WearableListView.Adapter {
 
         @Override
@@ -136,7 +184,17 @@ public class WearActivity extends Activity implements WearableListView.ClickList
             txtView.setText(node.title);
 
             CircledImageView imgView = (CircledImageView) itemView.findViewById(R.id.image);
-            imgView.setImageResource(node.icon_id);
+
+            if( node.type == TYPE_BARCODE ) {
+                if (node.icon_index > 0)
+                    imgView.setImageResource(providers.get(node.icon_index).icon_rid);
+                else
+                    imgView.setImageResource(R.drawable.ic_card);
+            }
+            else
+            {
+                imgView.setImageResource(node.icon_index);
+            }
         }
 
         @Override
@@ -152,7 +210,8 @@ public class WearActivity extends Activity implements WearableListView.ClickList
             String message = intent.getStringExtra("message");
             // Display message in UI
             Log.e("@@@ REC", "Message received on Main Activity: " + message);
-            //mTextView.setText(message);
+            config.writeStringJSON(message);
+            makeToast("Item Synced");
         }
     }
 
